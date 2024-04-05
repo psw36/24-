@@ -1,3 +1,4 @@
+// m을 누루면 태양이 움직입니다.
 let cols, rows;
 let scl = 20;
 let w = 1400;
