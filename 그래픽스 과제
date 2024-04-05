@@ -1,0 +1,135 @@
+let cols, rows;
+let scl = 20;
+let w = 1400;
+let h = 1000;
+
+let flying = 0;
+
+let terrain = [];
+
+let boxX = 700; // 초기 박스 위치
+let boxY = 300;
+let sunM = false;
+
+function setup() {
+  createCanvas(600, 600, WEBGL);
+  cols = w / scl;
+  rows = h / scl;
+
+  for (let x = 0; x < cols; x++) {
+    terrain[x] = [];
+    for (let y = 0; y < rows; y++) {
+      terrain[x][y] = 0; // 일단 기본값으로 설정
+    }
+  }
+}
+
+
+
+function draw() {
+  flying += 0.1;
+  let yoff = flying;
+  for (let y = 0; y < rows; y++) {
+    let xoff = 0;
+    for (let x = 0; x < cols; x++) {
+      terrain[x][y] = map(noise(xoff, yoff), 0, 1, -80, 50);
+      xoff += 0.05;
+    }
+    yoff += 0.1;
+  }
+
+  background(0, 150, 255);
+  rotateX(PI / 2.5);
+  fill(250, 255, 255, 255); // 투명도
+  translate(-w / 2, -h / 2);
+
+  for (let y = 0; y < rows - 1; y++) {
+    beginShape(TRIANGLE_STRIP);
+    for (let x = 0; x < cols; x++) {
+      fill(50, 100, 50, 255);  // 지형 색깔
+      vertex(x * scl, y * scl, terrain[x][y]);
+      vertex(x * scl, (y + 1) * scl, terrain[x][y + 1]);
+    }
+    endShape();
+  }
+
+  // 박스의 위치를 지형의 높이에 맞추기기
+  boxX = constrain(boxX + random(-1, 1), 0, w);
+  boxY = constrain(boxY + random(-1, 1), 0, h);
+
+  let boxZ = getTerrainHeight(boxX, boxY) + 50; // 지형 위로 일정한 높이만큼 떠있게 설정
+  
+  push();
+  fill(50,50,50);
+  noStroke();
+  translate(boxX, boxY, boxZ); //  위치를 설정하고 지형의 높이에 맞춤
+  box(50, 100, 50); // 몸체 그리기
+  pop();
+  
+  push(); // 유리창
+  noStroke();
+  fill(188,200,250);
+  translate(boxX, boxY+55, boxZ+10);
+  rotateX(HALF_PI);
+  plane(30,15);
+  pop();
+  
+  push();  // 뒷 바퀴1
+  fill(0,0,0);
+  noStroke();
+  translate(boxX+30, boxY+5, boxZ+8);
+  rotateZ(PI/2);
+  cylinder(15,10);
+  pop();
+  
+  push();  //뒷 바퀴2
+  fill(0,0,0);
+  noStroke();
+  translate(boxX-30, boxY+5, boxZ+8);
+  rotateZ(PI/2);
+  cylinder(15,10,20);
+  pop();
+  
+  push();  //앞 바퀴1
+  fill(0,0,0);
+  noStroke();
+  translate(boxX-30, boxY+20, boxZ-25);
+  rotateZ(PI/2);
+  cylinder(15,10,20);
+  pop();
+  
+  push();  //앞 바퀴2
+  fill(0,0,0);
+  noStroke();
+  translate(boxX+30, boxY+20, boxZ-25);
+  rotateZ(PI/2);
+  cylinder(15,10,20);
+  pop();
+  
+  if(sunM){ // 태양과 태양이 움직이게 
+    push();
+    noStroke();
+    let x1 = 610*sin(frameCount*0.05) +500;
+    let z1 = 150*cos(frameCount*0.05) + 25;
+    translate(x1+250,20,z1+5);
+    ambientLight(255); // 조명 사용
+    ambientMaterial(200,100,50); // 재질 사
+    sphere(20);
+    pop();
+  }
+  
+  
+}
+
+function getTerrainHeight(x,y){
+  // 박스의 위치에 해당하는 지형의 높이를 가져옴
+  let col = floor(map(x, 0, w, 0, cols - 1));
+  let row = floor(map(y, 0, h, 0, rows - 1));
+  return terrain[col][row];
+}
+
+function keyPressed(){ // m을 누르면 태양이 움직이게 설정
+  if(key == 'm') {
+    sunM = !sunM;
+  }
+}
