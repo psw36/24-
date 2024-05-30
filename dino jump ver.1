@@ -1,0 +1,372 @@
+//SFML 필요
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <vector>
+#include <ctime>
+#include <string>
+
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 600;
+
+class StartPage {
+public:
+    StartPage(sf::RenderWindow& window, sf::Font& font) : m_Window(window), m_Font(font) {
+        m_TitleText.setString("Dino Jump");
+        m_TitleText.setFont(m_Font);
+        m_TitleText.setCharacterSize(60);
+        m_TitleText.setFillColor(sf::Color::Black);
+        m_TitleText.setStyle(sf::Text::Bold);
+        m_TitleText.setPosition(WINDOW_WIDTH / 2 - m_TitleText.getGlobalBounds().width / 2, 100);
+
+        m_StartButtonText.setString("Start Game");
+        m_StartButtonText.setFont(m_Font);
+        m_StartButtonText.setCharacterSize(30);
+        m_StartButtonText.setFillColor(sf::Color::Black);
+        m_StartButtonText.setPosition(WINDOW_WIDTH / 2 - m_StartButtonText.getGlobalBounds().width / 2, 300);
+
+        m_StartButton.setSize(sf::Vector2f(m_StartButtonText.getGlobalBounds().width + 30, m_StartButtonText.getGlobalBounds().height + 30));
+        m_StartButton.setFillColor(sf::Color::White);
+        m_StartButton.setOutlineColor(sf::Color::Black);
+        m_StartButton.setOutlineThickness(2);
+        m_StartButton.setPosition(WINDOW_WIDTH / 2 - m_StartButtonText.getGlobalBounds().width / 2 - 10, 290);
+
+        m_NameInputText.setString("Enter your name:");
+        m_NameInputText.setFont(m_Font);
+        m_NameInputText.setCharacterSize(30);
+        m_NameInputText.setFillColor(sf::Color::Black);
+        m_NameInputText.setPosition(WINDOW_WIDTH / 2 - m_NameInputText.getGlobalBounds().width / 2, 200);
+
+        m_PlayerNameText.setFont(m_Font);
+        m_PlayerNameText.setCharacterSize(30);
+        m_PlayerNameText.setFillColor(sf::Color::Black);
+        m_PlayerNameText.setPosition(WINDOW_WIDTH / 2 - 100, 240);
+    }
+
+    bool show(std::string& playerName) {
+        while (m_Window.isOpen()) {
+            sf::Event event;
+            while (m_Window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed)
+                    m_Window.close();
+                else if (event.type == sf::Event::MouseButtonPressed) {
+                    if (event.mouseButton.button == sf::Mouse::Left) {
+                        if (m_StartButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                            return true; // 게임 시작
+                        }
+                    }
+                }
+                else if (event.type == sf::Event::TextEntered) {
+                    if (event.text.unicode == '\b') {
+                        if (!playerName.empty()) {
+                            playerName.pop_back(); // 백스페이스 처리
+                        }
+                    }
+                    else if (event.text.unicode < 128) {
+                        playerName += static_cast<char>(event.text.unicode); // 문자 입력 처리
+                    }
+                    m_PlayerNameText.setString(playerName);
+                }
+            }
+
+            m_Window.clear(sf::Color::White);
+            m_Window.draw(m_TitleText);
+            m_Window.draw(m_StartButton);
+            m_Window.draw(m_StartButtonText);
+            m_Window.draw(m_NameInputText);
+            m_Window.draw(m_PlayerNameText);
+            m_Window.display();
+        }
+        return false; // 창이 닫힌 경우
+    }
+
+private:
+    sf::RenderWindow& m_Window;
+    sf::Font& m_Font;
+    sf::Text m_TitleText;
+    sf::RectangleShape m_StartButton;
+    sf::Text m_StartButtonText;
+    sf::Text m_NameInputText;
+    sf::Text m_PlayerNameText;
+};
+
+class GameOverPage {
+public:
+    GameOverPage(sf::RenderWindow& window, sf::Font& font) : m_Window(window), m_Font(font) {
+        m_GameOverText.setString("Game Over");
+        m_GameOverText.setFont(m_Font);
+        m_GameOverText.setCharacterSize(60);
+        m_GameOverText.setFillColor(sf::Color::White);
+        m_GameOverText.setStyle(sf::Text::Bold);
+        m_GameOverText.setPosition(WINDOW_WIDTH / 2 - m_GameOverText.getGlobalBounds().width / 2, 100);
+
+        m_RestartButtonText.setString("Restart");
+        m_RestartButtonText.setFont(m_Font);
+        m_RestartButtonText.setCharacterSize(30);
+        m_RestartButtonText.setFillColor(sf::Color::Black);
+        m_RestartButtonText.setPosition(WINDOW_WIDTH / 2 - m_RestartButtonText.getGlobalBounds().width / 2, 300);
+
+        m_RestartButton.setSize(sf::Vector2f(m_RestartButtonText.getGlobalBounds().width + 30, m_RestartButtonText.getGlobalBounds().height + 30));
+        m_RestartButton.setFillColor(sf::Color::White);
+        m_RestartButton.setOutlineColor(sf::Color::Black);
+        m_RestartButton.setOutlineThickness(2);
+        m_RestartButton.setPosition(WINDOW_WIDTH / 2 - m_RestartButtonText.getGlobalBounds().width / 2 - 10, 290);
+
+        m_ExitButtonText.setString("Exit");
+        m_ExitButtonText.setFont(m_Font);
+        m_ExitButtonText.setCharacterSize(30);
+        m_ExitButtonText.setFillColor(sf::Color::Black);
+        m_ExitButtonText.setPosition(WINDOW_WIDTH / 2 - m_ExitButtonText.getGlobalBounds().width / 2, 400);
+
+        m_ExitButton.setSize(sf::Vector2f(m_ExitButtonText.getGlobalBounds().width + 30, m_ExitButtonText.getGlobalBounds().height + 30));
+        m_ExitButton.setFillColor(sf::Color::White);
+        m_ExitButton.setOutlineColor(sf::Color::Black);
+        m_ExitButton.setOutlineThickness(2);
+        m_ExitButton.setPosition(WINDOW_WIDTH / 2 - m_ExitButtonText.getGlobalBounds().width / 2 - 10, 390);
+    }
+
+    bool show(const std::string& playerName, int score) {
+        sf::Text scoreText;
+        scoreText.setFont(m_Font);
+        scoreText.setCharacterSize(30);
+        scoreText.setFillColor(sf::Color::White);
+        scoreText.setString(playerName + ": " + std::to_string(score));
+        scoreText.setPosition(WINDOW_WIDTH / 2 - scoreText.getGlobalBounds().width / 2, 200);
+
+        while (m_Window.isOpen()) {
+            sf::Event event;
+            while (m_Window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed)
+                    m_Window.close();
+                else if (event.type == sf::Event::MouseButtonPressed) {
+                    if (event.mouseButton.button == sf::Mouse::Left) {
+                        if (m_RestartButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                            return true; // 재시작
+                        }
+                        else if (m_ExitButton.getGlobalBounds().contains(event.mouseButton.x, event.mouseButton.y)) {
+                            return false; // 게임 종료를 시작 페이지로 돌아감
+                        }
+                    }
+                }
+            }
+
+            m_Window.clear(sf::Color::Black);
+            m_Window.draw(m_GameOverText);
+            m_Window.draw(scoreText);
+            m_Window.draw(m_RestartButton);
+            m_Window.draw(m_RestartButtonText);
+            m_Window.draw(m_ExitButton);
+            m_Window.draw(m_ExitButtonText);
+            m_Window.display();
+        }
+        return false; // 창이 닫힌 경우
+    }
+
+private:
+    sf::RenderWindow& m_Window;
+    sf::Font& m_Font;
+    sf::Text m_GameOverText;
+    sf::RectangleShape m_RestartButton;
+    sf::Text m_RestartButtonText;
+    sf::RectangleShape m_ExitButton;
+    sf::Text m_ExitButtonText;
+};
+
+class Ground {
+public:
+    sf::RectangleShape groundShape;
+    Ground() {
+        groundShape.setSize(sf::Vector2f(WINDOW_WIDTH, 50)); // 바닥 사각형 크기 설정
+        groundShape.setFillColor(sf::Color(139, 69, 19)); // 갈색으로 설정
+        groundShape.setPosition(sf::Vector2f(0.f, WINDOW_HEIGHT - 50)); // 바닥 위치 설정
+    }
+};
+
+// 장애물 클래스 정의
+class Obstacle {
+public:
+    sf::Sprite obstacleSprite;
+    bool passed; // 장애물이 공룡을 지나갔는지 여부를 나타내는 플래그
+    Obstacle(sf::Texture& texture) {
+        obstacleSprite.setTexture(texture); // 텍스처 설정
+        obstacleSprite.setScale(0.08f, 0.08f); // 이미지 크기 조정
+        obstacleSprite.setPosition(sf::Vector2f(WINDOW_WIDTH, WINDOW_HEIGHT - 70)); // 장애물 위치 설정
+        passed = false; // 초기에는 지나가지 않았음을 나타냄
+    }
+    void move() {
+        obstacleSprite.move(-0.2f, 0); // 장애물을 왼쪽으로 이동
+    }
+};
+
+int main() {
+    // 창 생성
+    sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Dino Jump");
+
+    // 폰트 로드
+    sf::Font font;
+    if (!font.loadFromFile("tuffy.ttf")) {
+        std::cerr << "Failed to load font file" << std::endl;
+        return 1;
+    }
+
+    // 시작 페이지 생성
+    StartPage startPage(window, font);
+
+    // 플레이어 이름 입력 받기
+    std::string playerName;
+    if (!startPage.show(playerName)) {
+        return 0; // 창이 닫힌 경우
+    }
+
+    while (window.isOpen()) {
+        // 바닥 객체 생성
+        Ground ground;
+
+        // 배경 이미지 로드
+        sf::Texture backgroundTexture;
+        if (!backgroundTexture.loadFromFile("img/background.png")) {
+            std::cerr << "Failed to load background image" << std::endl;
+            return 1;
+        }
+        sf::Sprite backgroundSprite;
+        backgroundSprite.setTexture(backgroundTexture);
+        backgroundSprite.setScale(static_cast<float>(WINDOW_WIDTH) / backgroundTexture.getSize().x, static_cast<float>(WINDOW_HEIGHT) / backgroundTexture.getSize().y);
+
+        // 공룡 스프라이트 설정
+        sf::Texture dinoTexture;
+        if (!dinoTexture.loadFromFile("img/dino.png")) {
+            std::cerr << "Failed to load dino.png" << std::endl;
+            return 1;
+        }
+        sf::Sprite dinoSprite;
+        dinoSprite.setTexture(dinoTexture);
+        dinoSprite.setScale(0.08f, 0.08f);
+        dinoSprite.setPosition(sf::Vector2f(100.f, WINDOW_HEIGHT - 100)); // 공룡 위치 설정
+        bool isJumping = false; // 점프 중 여부 플래그
+        float jumpHeight = 0.f; // 점프 높이
+
+        // 장애물 객체 생성
+        sf::Texture obstacleTexture;
+        if (!obstacleTexture.loadFromFile("img/rock.png")) {
+            std::cerr << "Failed to load rock.png" << std::endl;
+            return 1;
+        }
+        std::vector<Obstacle> obstacles;
+
+        // 점수 관련 변수 설정
+        int score = 0;
+        sf::Text scoreText;
+        scoreText.setFont(font);
+        scoreText.setCharacterSize(24);
+        scoreText.setFillColor(sf::Color::Black);
+        scoreText.setPosition(10.f, 10.f);
+
+        // 게임 루프
+        sf::Clock obstacleClock;
+        bool gameOver = false;
+        while (window.isOpen() && !gameOver) {
+            sf::Event event;
+            while (window.pollEvent(event)) {
+                if (event.type == sf::Event::Closed)
+                    window.close();
+            }
+
+            // 공룡 점프 (스페이스바 누르면 점프)
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space) && !isJumping) {
+                isJumping = true; // 점프 시작
+            }
+
+            // 점프 중일 때
+            if (isJumping) {
+                // 점프 높이 증가
+                jumpHeight += 5.0f;
+                dinoSprite.move(0, -0.5f); // 공룡을 위로 이동
+
+                // 최대 점프 높이에 도달하면 점프 중지
+                if (jumpHeight >= 100.f) {
+                    isJumping = false;
+                    jumpHeight = 0.f;
+                }
+            }
+            else {
+                // 중력 적용
+                if (dinoSprite.getPosition().y < WINDOW_HEIGHT - 100) {
+                    dinoSprite.move(0, 0.2f);
+                }
+            }
+
+            // 장애물 생성 시간 간격 설정 (2초)
+            if (obstacleClock.getElapsedTime().asSeconds() > 2) {
+                obstacles.emplace_back(Obstacle(obstacleTexture));
+                obstacleClock.restart(); // 시간 재설정
+            }
+
+            // 장애물 이동 및 화면 벗어난 장애물 제거
+            for (auto& obstacle : obstacles) {
+                obstacle.move();
+                if (obstacle.obstacleSprite.getPosition().x < -50) {
+                    obstacles.erase(obstacles.begin());
+                    break; // 벡터의 원소를 삭제하면 반복문이 무효화되므로 break 사용
+                }
+            }
+
+            // 장애물과 공룡 충돌 여부 확인 및 점수 계산
+            for (auto& obstacle : obstacles) {
+                if (obstacle.obstacleSprite.getGlobalBounds().intersects(dinoSprite.getGlobalBounds())) {
+                    // 충돌 발생 시 게임 종료
+                    std::cout << "Game Over! Score: " << score << std::endl;
+                    gameOver = true;
+                    break;
+                }
+                else if (obstacle.obstacleSprite.getPosition().x < dinoSprite.getPosition().x && !obstacle.passed) {
+                    obstacle.passed = true;
+                    score++; // 장애물을 넘었으므로 점수 증가
+                }
+            }
+
+            // 점수 텍스트 업데이트
+            scoreText.setString(playerName + ": " + std::to_string(score));
+
+            // 화면 지우기
+            window.clear(sf::Color::White);
+
+            window.draw(backgroundSprite);
+
+            // 바닥 그리기
+            window.draw(ground.groundShape);
+
+
+            // 장애물 그리기
+            for (auto& obstacle : obstacles) {
+                window.draw(obstacle.obstacleSprite);
+            }
+
+            // 공룡 그리기
+            window.draw(dinoSprite);
+
+            // 점수 텍스트 그리기
+            window.draw(scoreText);
+
+            // 화면 업데이트
+            window.display();
+        }
+
+        if (gameOver) {
+            // 게임 오버 페이지 생성
+            GameOverPage gameOverPage(window, font);
+            if (!gameOverPage.show(playerName, score)) {
+                if (!startPage.show(playerName)) {
+                    return 0; // 창이 닫힌 경우
+                }
+            }
+            else {
+                // 재시작을 위해 장애물 리스트와 점수 초기화
+                obstacles.clear();
+                score = 0;
+                gameOver = false;
+                dinoSprite.setPosition(sf::Vector2f(100.f, WINDOW_HEIGHT - 100)); // 공룡 위치 초기화
+            }
+        }
+    }
+
+    return 0;
+}
